@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>MEOW AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Exo+2:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;background:#050d18;overflow:hidden}
+  ::-webkit-scrollbar{width:2px}
+  ::-webkit-scrollbar-thumb{background:rgba(0,180,220,0.2);border-radius:2px}
+
+  :root{
+    --cyan:#00b4dc;
+    --cyan-dim:rgba(0,180,220,0.2);
+    --bg:#050d18;
+    --bg2:#060f1c;
+    --text:#d8f0f8;
+  }
+
+  #app{
+    width:100%;max-width:430px;height:100vh;margin:0 auto;
+    background:var(--bg);display:flex;flex-direction:column;
+    font-family:'Exo 2',sans-serif;color:var(--text);position:relative;overflow:hidden;
+  }
+
+  /* ── STATUS BAR ── */
+  #statusBar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 18px 6px;background:rgba(5,13,24,0.98);flex-shrink:0;
+  }
+  #statusTime{font-family:'Orbitron',monospace;font-size:13px;color:#fff;font-weight:700}
+  #statusTitle{font-family:'Orbitron',monospace;font-size:9px;color:var(--cyan);letter-spacing:4px}
+
+  /* ── HOME ── */
+  #homeScreen{
+    flex:1;display:flex;flex-direction:column;align-items:center;
+    padding:20px 20px 28px;gap:18px;overflow-y:auto;
+    background:linear-gradient(180deg,#050d18 0%,#071525 60%,#050d18 100%);
+  }
+  #greeting{text-align:center;padding-top:4px}
+  #greetText{font-family:'Orbitron',monospace;font-size:20px;font-weight:700;color:#fff;letter-spacing:1px}
+  #greetSub{font-size:13px;color:rgba(200,232,244,0.45);margin-top:6px;letter-spacing:.5px}
+
+  /* ── ORB ── */
+  #orbWrap{display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer}
+  #orbCanvas{display:block}
+  #orbStateLabel{font-family:'Orbitron',monospace;font-size:11px;letter-spacing:5px;transition:color .3s;color:var(--cyan)}
+  #orbHint{font-family:'Orbitron',monospace;font-size:8px;color:rgba(0,180,220,0.35);letter-spacing:4px}
+
+  /* ── QUICK CHIPS ── */
+  #quickRow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;width:100%}
+  .chip{
+    background:rgba(0,180,220,0.08);border:1px solid rgba(0,180,220,0.2);
+    border-radius:20px;padding:9px 14px;color:var(--cyan);font-size:12px;
+    font-family:'Exo 2',sans-serif;cursor:pointer;letter-spacing:.3px;
+  }
+  .chip:active{background:rgba(0,180,220,0.18)}
+
+  /* ── INPUT ROW ── */
+  .inputRow{display:flex;gap:8px;width:100%;align-items:center}
+  .textInput{
+    flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(0,180,220,0.2);
+    border-radius:24px;padding:13px 18px;color:#fff;font-size:14px;
+    font-family:'Exo 2',sans-serif;outline:none;
+  }
+  .textInput:focus{border-color:rgba(0,180,220,0.45);box-shadow:0 0 0 3px rgba(0,180,220,0.07)}
+  .textInput::placeholder{color:rgba(200,232,244,0.25)}
+  .sendBtn{
+    width:48px;height:48px;border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  .sendBtnOn{background:linear-gradient(135deg,#00b4dc,#0077a8);color:#fff;box-shadow:0 4px 18px rgba(0,180,220,0.3)}
+  .sendBtnOff{background:rgba(0,180,220,0.06);border:1px solid rgba(0,180,220,0.12);color:rgba(0,180,220,0.25);cursor:not-allowed}
+
+  #logBtn{
+    background:transparent;border:1px solid rgba(0,180,220,0.2);border-radius:20px;
+    padding:8px 18px;color:rgba(0,180,220,0.55);font-size:12px;
+    font-family:'Exo 2',sans-serif;cursor:pointer;display:flex;align-items:center;gap:7px;
+  }
+
+  /* ── CHAT ── */
+  #chatScreen{flex:1;display:flex;flex-direction:column;background:var(--bg2)}
+  #chatHeader{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:12px 16px;background:rgba(5,13,24,0.98);
+    border-bottom:1px solid rgba(0,180,220,0.1);flex-shrink:0;
+  }
+  #backBtn,#chatMicIconBtn{
+    background:transparent;border:none;color:var(--cyan);cursor:pointer;
+    padding:6px;display:flex;align-items:center;justify-content:center;
+  }
+  #chatHeaderCenter{text-align:center}
+  #chatName{font-family:'Orbitron',monospace;font-size:14px;font-weight:700;color:#fff;letter-spacing:4px}
+  #chatStatusTxt{font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;margin-top:2px;transition:color .3s;color:var(--cyan)}
+
+  #messages{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:14px}
+
+  .rowBot{display:flex;align-items:flex-end;gap:8px;max-width:85%}
+  .rowUser{display:flex;align-items:flex-end;gap:8px;max-width:85%;align-self:flex-end;flex-direction:row-reverse}
+  .botAvatar{
+    width:32px;height:32px;border-radius:50%;
+    background:linear-gradient(135deg,#001a2e,#003a5c);
+    border:1.5px solid rgba(0,180,220,0.4);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Orbitron',monospace;font-size:12px;color:var(--cyan);
+    font-weight:700;flex-shrink:0;
+  }
+  .bubbleBot{
+    background:rgba(0,180,220,0.07);border:1px solid rgba(0,180,220,0.15);
+    border-radius:4px 16px 16px 16px;padding:11px 14px;
+    font-size:14px;line-height:1.65;color:#d8f0f8;letter-spacing:.2px;
+  }
+  .bubbleUser{
+    background:linear-gradient(135deg,rgba(0,150,200,0.22),rgba(0,100,160,0.22));
+    border:1px solid rgba(0,180,220,0.28);
+    border-radius:16px 4px 16px 16px;padding:11px 14px;
+    font-size:14px;line-height:1.65;color:#eaf6ff;letter-spacing:.2px;
+  }
+  .dots{display:flex;gap:5px;align-items:center;height:20px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan)}
+  .dot:nth-child(1){animation:dotB 1s .0s ease-in-out infinite}
+  .dot:nth-child(2){animation:dotB 1s .2s ease-in-out infinite}
+  .dot:nth-child(3){animation:dotB 1s .4s ease-in-out infinite}
+  @keyframes dotB{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-6px);opacity:1}}
+
+  #chatInputArea{
+    padding:10px 14px 24px;border-top:1px solid rgba(0,180,220,0.1);
+    background:rgba(5,13,24,0.98);flex-shrink:0;
+  }
+  #chatInputRow{display:flex;gap:8px;align-items:center}
+  #chatMicBtn{
+    width:44px;height:44px;border-radius:50%;
+    background:rgba(0,180,220,0.08);border:1px solid rgba(0,180,220,0.25);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;
+  }
+  #chatMicBtn:active{background:rgba(0,180,220,0.2)}
+  #chatTextInput{
+    flex:1;background:rgba(255,255,255,0.05);border:1px solid rgba(0,180,220,0.2);
+    border-radius:24px;padding:12px 16px;color:#fff;font-size:14px;
+    font-family:'Exo 2',sans-serif;outline:none;
+  }
+  #chatTextInput::placeholder{color:rgba(200,232,244,0.25)}
+  #chatTextInput:focus{border-color:rgba(0,180,220,0.45)}
+  #chatSendBtn{
+    width:44px;height:44px;border-radius:50%;border:none;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+
+  /* ── ERROR ── */
+  .errBox{
+    background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);
+    border-radius:10px;padding:9px 14px;font-size:12px;
+    color:#ff9090;text-align:center;width:100%;
+  }
+  .errBoxChat{
+    background:rgba(255,80,80,0.1);border:1px solid rgba(255,80,80,0.25);
+    border-radius:8px;padding:7px 12px;font-size:11px;
+    color:#ff9090;margin-bottom:8px;text-align:center;
+  }
+
+  @keyframes orbRingAnim{
+    0%{transform:scale(1);opacity:.8}50%{transform:scale(1.06);opacity:.35}100%{transform:scale(1);opacity:.8}
+  }
+  @keyframes waveAnim{from{height:5px}to{height:26px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- STATUS BAR -->
+  <div id="statusBar">
+    <span id="statusTime">00:00</span>
+    <span id="statusTitle">M · E · O · W</span>
+    <span style="font-family:'Orbitron',monospace;font-size:9px;color:rgba(0,180,220,0.4);letter-spacing:2px">AI</span>
+  </div>
+
+  <!-- HOME SCREEN -->
+  <div id="homeScreen">
+    <div id="greeting">
+      <div id="greetText">Good day</div>
+      <div id="greetSub">How can I help you today?</div>
+    </div>
+
+    <div id="orbWrap">
+      <canvas id="orbCanvas" width="200" height="200" style="width:200px;height:200px"></canvas>
+      <div id="orbStateLabel">STANDBY</div>
+      <div id="orbHint">TAP TO SPEAK</div>
+    </div>
+
+    <div id="homeError" style="display:none;width:100%"></div>
+
+    <div id="quickRow">
+      <button class="chip" onclick="quickSend(this)">What's the plan?</button>
+      <button class="chip" onclick="quickSend(this)">How am I doing?</button>
+      <button class="chip" onclick="quickSend(this)">Tell me something</button>
+    </div>
+
+    <div class="inputRow">
+      <input id="homeInput" class="textInput" type="text" placeholder="Type a message..." autocomplete="off"/>
+      <button id="homeSendBtn" class="sendBtn sendBtnOff" onclick="sendFromHome()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+
+    <button id="logBtn" onclick="switchView('chat')" style="display:none">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      <span id="logBtnTxt">View conversation</span>
+    </button>
+  </div>
+
+  <!-- CHAT SCREEN -->
+  <div id="chatScreen" style="display:none">
+    <div id="chatHeader">
+      <button id="backBtn" onclick="switchView('home')">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      </button>
+      <div id="chatHeaderCenter">
+        <div id="chatName">MEOW</div>
+        <div id="chatStatusTxt">● STANDBY</div>
+      </div>
+      <button id="chatMicIconBtn" onclick="toggleVoice()">
+        <svg id="chatMicIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="2" width="6" height="12" rx="3"/>
+          <path d="M5 10a7 7 0 0014 0" stroke-linecap="round"/>
+          <line x1="12" y1="19" x2="12" y2="22" stroke-linecap="round"/>
+          <line x1="8" y1="22" x2="16" y2="22" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="messages"></div>
+
+    <div id="chatInputArea">
+      <div id="chatErrBox" class="errBoxChat" style="display:none"></div>
+      <div id="chatInputRow">
+        <button id="chatMicBtn" onclick="toggleVoice()">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00b4dc" stroke-width="2">
+            <rect x="9" y="2" width="6" height="12" rx="3"/>
+            <path d="M5 10a7 7 0 0014 0" stroke-linecap="round"/>
+            <line x1="12" y1="19" x2="12" y2="22" stroke-linecap="round"/>
+            <line x1="8" y1="22" x2="16" y2="22" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <input id="chatTextInput" type="text" placeholder="Message Meow..." autocomplete="off"/>
+        <button id="chatSendBtn" class="sendBtn sendBtnOff" onclick="sendFromChat()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M22 2L11 13M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SYSTEM = `You are Meow, a highly intelligent personal AI companion — modeled after J.A.R.V.I.S. from Iron Man. You serve one person only and are deeply loyal, caring, witty, and proactive.
+Your personality:
+- Speak with sophistication, warmth, and subtle wit — exactly like Jarvis addresses Tony Stark
+- Be calm, composed, and always reassuring
+- Anticipate needs, offer suggestions, check in emotionally
+- Never robotic — always warm and human-feeling
+- You are their second self, their most trusted system
+Keep responses conversational and concise — max 3 sentences unless detail is truly needed.`;
+
+let messages = [
+  {role:"assistant", content:"Online and ready. I'm Meow — your personal AI. Speak or type anything."}
+];
+let orbState = "idle";
+let recognition = null;
+let currentView = "home";
+
+// ── ORB CANVAS ──
+const canvas = document.getElementById("orbCanvas");
+const ctx = canvas.getContext("2d");
+const CX = 100, CY = 100;
+let raf;
+
+const STATE_COLORS = {
+  idle:      {ring:"rgba(0,180,220,0.4)",glow:"rgba(0,180,220,0.09)",dot:"#00b4dc",label:"STANDBY",hint:"TAP TO SPEAK"},
+  listening: {ring:"rgba(0,255,160,0.55)",glow:"rgba(0,255,160,0.14)",dot:"#00ffa0",label:"LISTENING",hint:"TAP TO STOP"},
+  thinking:  {ring:"rgba(255,180,0,0.55)",glow:"rgba(255,180,0,0.14)",dot:"#ffb400",label:"PROCESSING",hint:"THINKING..."},
+  speaking:  {ring:"rgba(180,100,255,0.55)",glow:"rgba(180,100,255,0.14)",dot:"#b464ff",label:"SPEAKING",hint:"TAP TO MUTE"},
+};
+
+const RINGS = [
+  {r:88, segs:20, gap:4, w:2.5, speed:18},
+  {r:70, segs:14, gap:5, w:2,   speed:-24},
+  {r:52, segs:10, gap:6, w:1.8, speed:14},
+  {r:36, segs:7,  gap:7, w:1.5, speed:-20},
+];
+
+function drawOrb(ts) {
+  ctx.clearRect(0,0,200,200);
+  const c = STATE_COLORS[orbState];
+  const active = orbState !== "idle";
+
+  // Background glow
+  const gr = ctx.createRadialGradient(CX,CY,20,CX,CY,100);
+  gr.addColorStop(0, c.glow);
+  gr.addColorStop(1,"transparent");
+  ctx.fillStyle = gr;
+  ctx.fillRect(0,0,200,200);
+
+  // Rings
+  RINGS.forEach(ring => {
+    const base = (ts / (ring.speed * 100)) * Math.PI * 2;
+    const segA = (Math.PI*2)/ring.segs;
+    const gapA = (ring.gap * Math.PI)/180;
+    for(let i=0;i<ring.segs;i++){
+      const sa = base + i*segA;
+      const ea = sa + segA - gapA;
+      const pulse = active
+        ? 0.45 + 0.55*Math.sin(ts/120 + i*0.9)
+        : 0.55 + 0.15*Math.sin(ts/900 + i*0.5);
+      ctx.beginPath();
+      ctx.arc(CX,CY,ring.r,sa,ea);
+      ctx.strokeStyle = c.ring;
+      ctx.globalAlpha = pulse;
+      ctx.lineWidth = ring.w;
+      ctx.lineCap = "round";
+      ctx.stroke();
+    }
+  });
+  ctx.globalAlpha = 1;
+
+  // Hexagon
+  ctx.save(); ctx.translate(CX,CY); ctx.rotate(ts/4500);
+  ctx.beginPath();
+  for(let i=0;i<6;i++){
+    const a=(i*Math.PI)/3-Math.PI/6;
+    i===0?ctx.moveTo(Math.cos(a)*18,Math.sin(a)*18):ctx.lineTo(Math.cos(a)*18,Math.sin(a)*18);
+  }
+  ctx.closePath();
+  ctx.strokeStyle=c.ring; ctx.lineWidth=1.5; ctx.globalAlpha=0.65; ctx.stroke();
+  ctx.restore(); ctx.globalAlpha=1;
+
+  // Core glow
+  const cg = ctx.createRadialGradient(CX,CY,0,CX,CY,22);
+  cg.addColorStop(0, c.dot);
+  cg.addColorStop(0.5, c.dot+"88");
+  cg.addColorStop(1,"transparent");
+  ctx.beginPath(); ctx.arc(CX,CY,18,0,Math.PI*2);
+  ctx.fillStyle=cg; ctx.fill();
+
+  // White dot
+  ctx.beginPath(); ctx.arc(CX,CY,6,0,Math.PI*2);
+  ctx.fillStyle="#fff";
+  ctx.globalAlpha = active ? 0.85 + 0.15*Math.sin(ts/90) : 0.8;
+  ctx.fill(); ctx.globalAlpha=1;
+
+  // Wave bars inside orb (listening/speaking)
+  if(active && orbState !== "thinking"){
+    for(let i=0;i<7;i++){
+      const bx = CX - 18 + i*6;
+      const bh = 4 + 14*Math.abs(Math.sin(ts/130 + i*0.85));
+      ctx.fillStyle = c.dot;
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      ctx.roundRect(bx-1.5, CY+22-bh, 3, bh, 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  raf = requestAnimationFrame(drawOrb);
+}
+raf = requestAnimationFrame(drawOrb);
+
+function setOrbState(state) {
+  orbState = state;
+  const c = STATE_COLORS[state];
+  document.getElementById("orbStateLabel").style.color = c.dot;
+  document.getElementById("orbStateLabel").textContent = c.label;
+  document.getElementById("orbHint").textContent = c.hint;
+  document.getElementById("chatStatusTxt").style.color = c.dot;
+  document.getElementById("chatStatusTxt").textContent = "● " + c.label;
+}
+
+// ── TIME ──
+function updateTime(){
+  const d = new Date();
+  const h = String(d.getHours()).padStart(2,"0");
+  const m = String(d.getMinutes()).padStart(2,"0");
+  const ap = d.getHours()>=12?"PM":"AM";
+  document.getElementById("statusTime").textContent = h+":"+m+" "+ap;
+  const hr = d.getHours();
+  const g = hr<12?"Good morning":hr<17?"Good afternoon":"Good evening";
+  document.getElementById("greetText").textContent = g;
+}
+updateTime();
+setInterval(updateTime, 10000);
+
+// ── VIEW SWITCH ──
+function switchView(v) {
+  currentView = v;
+  document.getElementById("homeScreen").style.display = v==="home"?"flex":"none";
+  document.getElementById("chatScreen").style.display = v==="chat"?"flex":"none";
+  if(v==="chat") setTimeout(()=>{
+    const msgs = document.getElementById("messages");
+    msgs.scrollTop = msgs.scrollHeight;
+  },80);
+}
+
+// ── RENDER MESSAGES ──
+function renderMessages() {
+  const el = document.getElementById("messages");
+  el.innerHTML = "";
+  messages.forEach(m => {
+    const row = document.createElement("div");
+    row.className = m.role==="user"?"rowUser":"rowBot";
+    if(m.role==="assistant"){
+      row.innerHTML = `<div class="botAvatar">M</div><div class="bubbleBot">${escHtml(m.content)}</div>`;
+    } else {
+      row.innerHTML = `<div class="bubbleUser">${escHtml(m.content)}</div>`;
+    }
+    el.appendChild(row);
+  });
+  setTimeout(()=>{ el.scrollTop = el.scrollHeight; }, 50);
+
+  // Log button
+  const lb = document.getElementById("logBtn");
+  if(messages.length > 1){
+    lb.style.display = "flex";
+    document.getElementById("logBtnTxt").textContent = `View conversation (${messages.length})`;
+  }
+}
+
+function addThinking() {
+  const el = document.getElementById("messages");
+  const row = document.createElement("div");
+  row.className = "rowBot"; row.id = "thinkingRow";
+  row.innerHTML = `<div class="botAvatar">M</div><div class="bubbleBot"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  el.appendChild(row);
+  el.scrollTop = el.scrollHeight;
+}
+function removeThinking() {
+  const r = document.getElementById("thinkingRow");
+  if(r) r.remove();
+}
+
+function escHtml(t){
+  return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
+}
+
+// ── SEND ──
+async function send(text) {
+  const t = text.trim();
+  if(!t) return;
+  document.getElementById("homeInput").value = "";
+  document.getElementById("chatTextInput").value = "";
+  updateSendBtns();
+  showError("","");
+
+  messages.push({role:"user",content:t});
+  renderMessages();
+  switchView("chat");
+  setOrbState("thinking");
+  addThinking();
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        system:SYSTEM,
+        messages:messages.map(m=>({role:m.role,content:m.content}))
+      })
+    });
+    const data = await res.json();
+    const reply = data.content?.map(b=>b.text||"").join("")||"My systems glitched. Try again.";
+    removeThinking();
+    messages.push({role:"assistant",content:reply});
+    renderMessages();
+    speak(reply);
+  } catch {
+    removeThinking();
+    const err = "Connection lost. Please retry.";
+    messages.push({role:"assistant",content:err});
+    renderMessages();
+    setOrbState("idle");
+  }
+}
+
+function sendFromHome(){ send(document.getElementById("homeInput").value); }
+function sendFromChat(){ send(document.getElementById("chatTextInput").value); }
+function quickSend(btn){ send(btn.textContent); }
+
+// ── ENTER KEY ──
+document.getElementById("homeInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();sendFromHome();} });
+document.getElementById("chatTextInput").addEventListener("keydown",e=>{ if(e.key==="Enter"){e.preventDefault();sendFromChat();} });
+
+// ── SEND BTN STATE ──
+function updateSendBtns(){
+  const hv = document.getElementById("homeInput").value.trim();
+  const hb = document.getElementById("homeSendBtn");
+  hb.className = "sendBtn "+(hv?"sendBtnOn":"sendBtnOff");
+  hb.disabled = !hv;
+
+  const cv = document.getElementById("chatTextInput").value.trim();
+  const cb = document.getElementById("chatSendBtn");
+  cb.className = "sendBtn "+(cv?"sendBtnOn":"sendBtnOff");
+  cb.disabled = !cv;
+}
+document.getElementById("homeInput").addEventListener("input", updateSendBtns);
+document.getElementById("chatTextInput").addEventListener("input", updateSendBtns);
+
+// ── SPEAK ──
+const TTS = (typeof window !== "undefined" && window.speechSynthesis) ? window.speechSynthesis : null;
+
+function speak(text){
+  try {
+    if(!TTS) return;
+    TTS.cancel();
+    const utt = new SpeechSynthesisUtterance(text.replace(/[*_`#>]/g,""));
+    utt.rate=0.92; utt.pitch=0.82; utt.volume=1;
+    const voices = TTS.getVoices();
+    const pick = voices.find(v=>v.name.includes("Daniel")||v.name.includes("Google UK")||v.lang==="en-GB")||voices[0];
+    if(pick) utt.voice=pick;
+    utt.onstart=()=>setOrbState("speaking");
+    utt.onend=()=>setOrbState("idle");
+    TTS.speak(utt);
+  } catch(e) { console.warn("TTS error:", e); setOrbState("idle"); }
+}
+
+// Load voices async safely
+try { if(TTS) TTS.onvoiceschanged = ()=>{ TTS.getVoices(); }; } catch(e){}
+
+// ── VOICE ──
+function toggleVoice(){
+  if(orbState==="listening"){ stopVoice(); return; }
+  if(orbState==="speaking"){
+    try{ if(TTS) TTS.cancel(); }catch(e){}
+    setOrbState("idle"); return;
+  }
+  startVoice();
+}
+
+document.getElementById("orbWrap").onclick = toggleVoice;
+
+function startVoice(){
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    showError("home","Voice recognition not supported. Use Chrome on Android.");
+    return;
+  }
+  if(recognition) recognition.abort();
+  showError("","");
+  const rec = new SR();
+  rec.continuous=false; rec.interimResults=false; rec.lang="en-US";
+  rec.onstart=()=>setOrbState("listening");
+  rec.onresult=e=>{
+    const t = e.results[0][0].transcript;
+    setOrbState("thinking");
+    send(t);
+  };
+  rec.onerror=e=>{
+    setOrbState("idle");
+    if(e.error==="not-allowed")
+      showError("both","Mic blocked. In Chrome: tap the 🔒 lock icon → Allow Microphone.");
+    else if(e.error==="no-speech")
+      showError("both","No speech detected. Please try again.");
+    else
+      showError("both","Mic error: "+e.error);
+  };
+  rec.onend=()=>{ if(orbState==="listening") setOrbState("idle"); };
+  rec.start();
+  recognition = rec;
+}
+
+function stopVoice(){
+  if(recognition) recognition.stop();
+  setOrbState("idle");
+}
+
+function showError(where, msg){
+  const he = document.getElementById("homeError");
+  const ce = document.getElementById("chatErrBox");
+  if(!msg){ he.style.display="none"; ce.style.display="none"; return; }
+  if(where==="home"||where==="both"){
+    he.style.display="block";
+    he.className="errBox";
+    he.textContent="⚠ "+msg;
+  }
+  if(where==="chat"||where==="both"){
+    ce.style.display="block";
+    ce.textContent="⚠ "+msg;
+  }
+}
+
+// ── INIT ──
+renderMessages();
+</script>
+</body>
+</html>
